@@ -30,6 +30,9 @@ if {[info exists quartus(args)] && [llength $quartus(args)] >= 1} {
 # -overwrite: re-run from a clean slate each build; the Makefile owns staleness.
 project_new blinky -overwrite
 
+# --- Machine -----------------------------------------------------------------
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+
 # --- Device ------------------------------------------------------------------
 # Terasic Cyclone V GX Starter Kit (C5G). The chip is marked 5CGXFC5C6F27C7N,
 # but Quartus's DEVICE name drops the trailing "N" (the lead-free package
