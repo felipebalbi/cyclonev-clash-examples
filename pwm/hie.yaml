@@ -1,0 +1,10 @@
+cradle:
+  stack:
+  - path: "src"
+    component: "pwm:lib"
+  - path: "bin/Clash.hs"
+    component: "pwm:exe:clash"
+  - path: "bin/Clashi.hs"
+    component: "pwm:exe:clashi"
+  - path: "tests"
+    component: "pwm:test:test-library"
