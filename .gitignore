@@ -1,0 +1,13 @@
+# Editor / tooling state
+/.metals/
+.ghc.environment.*
+*~
+.DS_Store
+/.idea
+
+# Haskell / stack / cabal build state (also covered per-project)
+.stack-work/
+dist/
+dist-newstyle/
+*.hi
+*.o

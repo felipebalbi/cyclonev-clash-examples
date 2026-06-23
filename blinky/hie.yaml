@@ -1,0 +1,10 @@
+cradle:
+  stack:
+  - path: "src"
+    component: "blinky:lib"
+  - path: "bin/Clash.hs"
+    component: "blinky:exe:clash"
+  - path: "bin/Clashi.hs"
+    component: "blinky:exe:clashi"
+  - path: "tests"
+    component: "blinky:test:test-library"
