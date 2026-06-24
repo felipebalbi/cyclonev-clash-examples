@@ -18,6 +18,7 @@ straight to other Clash projects.
 | Example | What it is |
 |---|---|
 | [`blinky/`](blinky/) | Counter-divider drives an on-board LED. The "hello world" smoke test for the whole Clash → Quartus → board toolchain. Two tops: `Blinky` (free-runs) and `BlinkyWithReset` (held in reset by KEY0). |
+| [`pwm/`](pwm/) | Counter+comparator emits a duty-cycled output; a ramped duty makes `LEDR[0]` "breathe". The follow-on to `blinky`: where blinky toggled an LED, PWM dims one. |
 
 ## Toolchain
 
