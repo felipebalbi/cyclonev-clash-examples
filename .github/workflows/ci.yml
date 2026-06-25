@@ -1,0 +1,67 @@
+name: tests
+
+# Run each example's pure-Haskell tasty suite (stack test). Only the Clash /
+# Haskell front end is exercised here — the Quartus backend is out of scope for
+# CI (no toolchain on the runner, and the .sof is hardware-only anyway).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch/PR supersedes an in-flight run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Cold runs build the Clash toolchain (~10-15 min); cached runs are quick.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Stack
+        uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-version: latest
+          # Stack installs its own GHC (pinned by each project's lts-24.38
+          # resolver), so don't provision a global GHC.
+          stack-no-global: true
+
+      # Cache the expensive bits: ~/.stack holds the GHC install and the shared
+      # snapshot (clash-prelude, clash-lib, the type-lits plugins, ...), which all
+      # examples reuse since they pin the same resolver + extra-deps. **/.stack-work
+      # holds each project's incremental build artifacts. Keyed on the lockfiles and
+      # cabal files; restore-keys lets a changed key still reuse the latest snapshot.
+      - name: Cache Stack
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.stack
+            **/.stack-work
+          key: stack-${{ runner.os }}-${{ hashFiles('**/stack.yaml.lock', '**/*.cabal') }}
+          restore-keys: |
+            stack-${{ runner.os }}-
+
+      # One job, run sequentially: the first `stack test` builds the shared Clash
+      # snapshot into ~/.stack once, then the rest only compile their own lib+tests.
+      # Every example runs even if an earlier one fails, so a PR sees all breakage.
+      - name: stack test (all examples)
+        shell: bash
+        run: |
+          rc=0
+          for f in */stack.yaml; do
+            d=$(dirname "$f")
+            echo "::group::stack test ($d)"
+            if (cd "$d" && stack test --no-terminal); then
+              echo "$d: PASS"
+            else
+              echo "::error::stack test failed in $d"
+              rc=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $rc
