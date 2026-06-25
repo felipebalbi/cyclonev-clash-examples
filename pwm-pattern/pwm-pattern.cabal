@@ -100,6 +100,8 @@ library
     PwmMealy
     PwmMoore
     PwmPattern.Domain
+    PwmPattern.Pattern
+    PwmPattern.Pattern.Constant
   default-language: Haskell2010
 
 -- Builds the executable 'clash', with the pwm-pattern project in scope.
@@ -137,6 +139,7 @@ test-suite test-library
   main-is: unittests.hs
   other-modules:
     Tests.PwmCore
+    Tests.Pattern
   build-depends:
     pwm-pattern,
     tasty >= 1.2 && < 1.6,

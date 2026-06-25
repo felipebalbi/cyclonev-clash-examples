@@ -2,6 +2,7 @@ import Prelude
 
 import Test.Tasty
 
+import qualified Tests.Pattern
 import qualified Tests.PwmCore
 
 main :: IO ()
@@ -10,4 +11,5 @@ main =
                 testGroup
                         "."
                         [ Tests.PwmCore.coreTests
+                        , Tests.Pattern.patternTests
                         ]
