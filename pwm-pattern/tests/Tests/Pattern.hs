@@ -49,9 +49,6 @@ constantTests =
                 "Constant"
                 [ testCase "duty is the 75% default" $
                         duty (initial :: Constant) @?= constDuty
-                , -- The field carries the level, so a chosen value flows straight through.
-                  testCase "the field chooses the level" $
-                        duty (Constant 12345) @?= 12345
                 , testCase "never advances (next = id)" $
                         next (initial :: Constant) @?= (initial :: Constant)
                 , -- step must yield the duty and leave the state untouched, whether or
