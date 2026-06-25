@@ -6,12 +6,6 @@ the upstream
 project and the sibling `blinky` example. The follow-on to `blinky`: a
 counter+comparator dims an LED instead of just toggling it.
 
-> **Status: scaffold.** Build system only; `src/` and `tests/` hold empty `.hs`
-> stubs (`Pwm`, `Pwm.Domain`, `unittests`, `Tests.Pwm`) — the cabal references
-> them but they have no bodies yet, so `stack build` / `make` will fail until
-> they're written. Everything below about the *build system* is live; anything
-> about the PWM circuit is the intended shape, not yet implemented.
-
 ## Cross-project deps
 
 None planned. Self-contained, like `blinky`. Pin choices and I/O standards are
@@ -23,10 +17,10 @@ written fresh against the Clash port names.
 ```
 pwm/
   bin/   Clash.hs / Clashi.hs   thin Clash.Main wrappers (clash, clashi exes)
-  src/   Pwm.hs                 (TBD) topEntity + pwm component + makeTopEntity
-         Pwm/Domain.hs          (TBD) clock domain
-  tests/ unittests.hs           (TBD) tasty runner main
-         Tests/Pwm.hs           (TBD) duty-cycle assertions / properties
+  src/   Pwm.hs                 topEntity + pwm component + makeTopEntity
+         Pwm/Domain.hs          Dom50 (50 MHz) clock domain
+  tests/ unittests.hs           tasty runner main
+         Tests/Pwm.hs           duty-cycle assertions
   pwm.tcl                       Quartus project script (device + pins + SDC)
   Makefile  build.cfg           Clash -> Quartus -> program
 ```
@@ -63,24 +57,26 @@ Identical to `blinky`:
 - **Pins bind to Clash port names.** `set_location_assignment PIN_R20 -to clk`
   etc. map the `makeTopEntity` ports, not the board labels. A vector output
   (`led :: Signal dom (BitVector 10)`) binds index by index (`led[0]`..`led[9]`);
-  `pwm.tcl` carries the full `LEDR[9:0]` map as a commented block for the eventual
-  pattern-generator variant.
+  `pwm.tcl` carries the full `LEDR[9:0]` map as a commented block (the
+  `pwm-pattern` example builds the pattern-generator variant).
 - **Timing is single-sourced from Clash.** `pwm.tcl` adds the Clash-generated
   `topEntity.sdc` as the `SDC_FILE`; no hand-written SDC.
 - **`.sof` is volatile** (SRAM config). `make program` writes it over the
   built-in USB-Blaster; the serial-flash `.pof` path is out of scope.
 
-## Clash notes for when you write the source
+## Clash notes
 
 - **`makeTopEntity 'topEntity`** must wrap the top so the named-port signature
   fixes the Verilog port names the `.tcl` binds to (`clk`, `led`).
-- **Keep `pwm` a reusable, parameterized component** (e.g. resolution as an
-  `SNat`), separate from `topEntity`, so it can be unit-tested in isolation and
-  reused by a pattern generator later. This mirrors how `blink` was factored.
-- **Duty source:** a free-running ramp gives a "breathing" LED with no inputs;
-  reading `SW[9:0]` makes the duty interactive (add the switch pins to `pwm.tcl`).
-- **Tests:** unlike blinky, PWM has real input→output semantics — assert the
-  average of the output stream tracks the duty (a genuine property test).
+- **`pwm` is a reusable component** kept separate from `topEntity`, so it can be
+  unit-tested in isolation; the `pwm-pattern` example builds the same idea into a
+  pattern-generator core. The duty width is fixed by the `Signal dom (Unsigned n)`
+  argument's type (no `SNat` needed, unlike blinky's `blink`).
+- **Duty source:** `topEntity` feeds a constant 75% duty (lifted with `pure`);
+  because `pwm` takes the duty as a `Signal`, a ramp or `SW[9:0]` could drive it
+  instead with no change to `pwm` (see `pwm-pattern` for a time-varying duty).
+- **Tests:** unlike blinky, PWM has real input→output semantics — `Tests/Pwm.hs`
+  asserts the high-sample count over whole periods tracks the duty exactly.
 - The `pwm.cabal` `common-options` (extensions + the load-bearing `ghc-options`)
   are copied from orangecrab — don't trim them.
 
@@ -92,5 +88,3 @@ Identical to `blinky`:
   discrete tools are the intended mirror of the reference pipeline.
 - Don't bump Clash off the `stack.yaml` pin without updating the `clash-prelude`
   bound in `pwm.cabal`.
-- Don't leave the `src/` and `tests/` `.hs` files empty — they're stubs to fill
-  in (an empty `.hs` won't compile).
