@@ -20,7 +20,7 @@ straight to other Clash projects.
 | [`blinky/`](blinky/) | Counter-divider drives an on-board LED. The "hello world" smoke test for the whole Clash → Quartus → board toolchain. Two tops: `Blinky` (free-runs) and `BlinkyWithReset` (held in reset by KEY0). |
 | [`pwm/`](pwm/) | Counter+comparator emits a duty-cycled output at a fixed 75 % duty, dimming `LEDR[0]` to a steady level. The follow-on to `blinky`: where blinky toggled an LED, PWM dims one. |
 | [`pwm-pattern/`](pwm-pattern/) | Pattern generators feed the PWM duty — a steady level or a breathing ramp, picked live by `SW[0]`. Built **two ways** (`PwmMoore` via `moore`, `PwmMealy` via `mealyS`) to compare the constructions, with a test proving they produce the same waveform. |
-| [`pwm-wave/`](pwm-wave/) | A PWM "Larson/KITT" brightness wave: a symmetric bump ping-pongs across `LEDR[9:0]` while a counter-rotating bump sweeps `LEDG[7:0]`, each LED dimmed by per-lane PWM so the bump glides. Teaching axis: **vectors** — `Vec n Bit` ports and a vectorized PWM core (one carrier, N comparators). |
+| [`pwm-wave/`](pwm-wave/) | A PWM "Larson/KITT" brightness wave: a symmetric bump ping-pongs across `LEDR[9:0]` while a counter-rotating bump sweeps `LEDG[7:0]`, each LED dimmed by per-lane PWM so the bump glides. Teaching axis: **vectors** — `Vec n Bit` ports and a vectorized PWM core (one carrier, N comparators). `SW[0]` swaps the linear falloff for a **gamma** curve held in the repo's first on-chip ROM. |
 
 ## Toolchain
 
