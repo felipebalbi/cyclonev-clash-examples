@@ -70,7 +70,9 @@ for {set i 0} {$i < 8} {incr i} {
     set_instance_assignment -name IO_STANDARD "2.5 V" -to ledg[$i]
 }
 
-# SW[0] -> PIN_AC9 (1.2 V) is reserved for the v2 gamma/triangle kernel select.
+# SW[0] selects the brightness kernel: low = triangle (linear), high = gamma.
+set_location_assignment PIN_AC9 -to sw
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw
 
 # Unused/dual-purpose pins keep Quartus's safe default ("as input tri-stated
 # with weak pull-up"); not overridden for this smoke test.
