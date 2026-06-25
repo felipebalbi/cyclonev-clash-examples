@@ -30,9 +30,10 @@ import PwmPattern.Pattern
         , runMoore
         )
 import PwmPattern.Pattern.Constant (Constant (..), constDuty)
+import PwmPattern.Pattern.Triangle (Triangle (..), scaleToDuty)
 
 patternTests :: TestTree
-patternTests = testGroup "Pattern" [constantTests, prescaleTests]
+patternTests = testGroup "Pattern" [constantTests, triangleTests, prescaleTests]
 
 -- ---------------------------------------------------------------------------
 -- Constant
@@ -71,6 +72,57 @@ constantTests =
                                         C.withClockResetEnable C.clockGen C.resetGen C.enableGen $
                                                 runMealy (initial :: Constant) (pure True)
                         mooreStream @?= replicate n constDuty
+                        mooreStream @?= mealyStream
+                ]
+
+-- ---------------------------------------------------------------------------
+-- Triangle
+-- ---------------------------------------------------------------------------
+
+-- | The infinite sequence of Triangle states from the seed, advancing with 'next'.
+triangleStates :: [Triangle]
+triangleStates = iterate next (initial :: Triangle)
+
+triangleTests :: TestTree
+triangleTests =
+        testGroup
+                "Triangle"
+                [ -- The level ramps 0,1,..,255 on the way up, so the first 256 duties
+                  -- are exactly those levels scaled to the 16-bit range. `iterate next`
+                  -- unrolls the state machine purely (no clock), and `map duty` reads
+                  -- each state's brightness — a direct check of the rising half.
+                  testCase "rising ramp: first 256 duties are levels 0..255 scaled" $
+                        map duty (take 256 triangleStates)
+                                @?= map scaleToDuty [0 .. 255]
+                , -- After the peak the level falls 254,253,..,0 (the turnaround steps
+                  -- *past* the top to 254, so 255 is visited once — no doubled tip).
+                  -- Dropping the first 256 states lands us just past the peak.
+                  testCase "falling ramp: next 255 duties are levels 254..0 scaled" $
+                        map duty (take 255 (drop 256 triangleStates))
+                                @?= map scaleToDuty (reverse [0 .. 254])
+                , -- The re-authoring invariant: the Mealy `step` must match the Moore
+                  -- `next`/`duty` at every state in a full period (510 states). With
+                  -- advance=True the State action returns (duty s, next s); with
+                  -- advance=False it returns (duty s, s) — output always the
+                  -- *pre-update* duty, state held when not advancing.
+                  testCase "step (advance=True) matches (duty, next) over a full period" $
+                        [runState (step True) s | s <- take 510 triangleStates]
+                                @?= [(duty s, next s) | s <- take 510 triangleStates]
+                , testCase "step (advance=False) yields the duty and holds the state" $
+                        [runState (step False) s | s <- take 510 triangleStates]
+                                @?= [(duty s, s) | s <- take 510 triangleStates]
+                , -- Simulated: the two drivers must produce identical waveforms. A
+                  -- focused preview of Task 5; 600 cycles covers more than one period.
+                  testCase "moore and mealy drivers agree (Triangle waveform)" $ do
+                        let n = 600
+                            mooreStream =
+                                C.sampleN @C.System n $
+                                        C.withClockResetEnable C.clockGen C.resetGen C.enableGen $
+                                                runMoore (initial :: Triangle) (pure True)
+                            mealyStream =
+                                C.sampleN @C.System n $
+                                        C.withClockResetEnable C.clockGen C.resetGen C.enableGen $
+                                                runMealy (initial :: Triangle) (pure True)
                         mooreStream @?= mealyStream
                 ]
 
