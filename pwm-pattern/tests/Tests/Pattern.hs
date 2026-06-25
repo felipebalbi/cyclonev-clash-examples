@@ -22,7 +22,8 @@ import qualified Clash.Prelude as C
 import Control.Monad.State.Strict (runState)
 
 import PwmPattern.Pattern
-        ( PatGen (..)
+        ( DutyW
+        , PatGen (..)
         , PatGenMealy (..)
         , PatGenMoore (..)
         , prescale
@@ -33,7 +34,10 @@ import PwmPattern.Pattern.Constant (Constant (..), constDuty)
 import PwmPattern.Pattern.Triangle (Triangle (..), scaleToDuty)
 
 patternTests :: TestTree
-patternTests = testGroup "Pattern" [constantTests, triangleTests, prescaleTests]
+patternTests =
+        testGroup
+                "Pattern"
+                [constantTests, triangleTests, equivalenceTests, prescaleTests]
 
 -- ---------------------------------------------------------------------------
 -- Constant
@@ -124,6 +128,50 @@ triangleTests =
                                         C.withClockResetEnable C.clockGen C.resetGen C.enableGen $
                                                 runMealy (initial :: Triangle) (pure True)
                         mooreStream @?= mealyStream
+                ]
+
+-- ---------------------------------------------------------------------------
+-- Equivalence (the "two spellings, one waveform" centrepiece)
+-- ---------------------------------------------------------------------------
+
+{- | Sample @n@ cycles of the Moore-driven Triangle under an arbitrary advance
+tick, in 'C.System'. Monomorphic in the driver on purpose: a helper that took the
+driver as an argument would let GHC generalise the domain away from 'C.System'
+and become ambiguous, so 'runMoore' / 'runMealy' get their own helpers.
+-}
+mooreTriangle :: Int -> [Bool] -> [C.Unsigned DutyW]
+mooreTriangle n ticks =
+        C.sampleN @C.System n $
+                C.withClockResetEnable C.clockGen C.resetGen C.enableGen $
+                        runMoore (initial :: Triangle) (C.fromList ticks)
+
+-- | As 'mooreTriangle', but Mealy-driven.
+mealyTriangle :: Int -> [Bool] -> [C.Unsigned DutyW]
+mealyTriangle n ticks =
+        C.sampleN @C.System n $
+                C.withClockResetEnable C.clockGen C.resetGen C.enableGen $
+                        runMealy (initial :: Triangle) (C.fromList ticks)
+
+equivalenceTests :: TestTree
+equivalenceTests =
+        testGroup
+                "Equivalence"
+                [ -- Guard the guard: an equivalence test passes vacuously if BOTH
+                  -- drivers are identically broken (e.g. the pattern gets stuck at a
+                  -- constant). Proving the waveform spans trough..peak shows it really
+                  -- moves, so the agreement below is meaningful.
+                  testCase "triangle waveform spans its full range (not vacuous)" $ do
+                        let stream = mooreTriangle 600 (repeat True)
+                        minimum stream @?= scaleToDuty minBound -- reaches the trough (0)
+                        maximum stream @?= scaleToDuty maxBound -- reaches the peak
+                , -- The existing agreement tests all advance every cycle (tick always
+                  -- True). The drivers differ precisely in how they HOLD when not
+                  -- advancing — runMoore's `if adv then next s else s` vs runMealy's
+                  -- `when advance (put s')`. A gated tick exercises that hold path in
+                  -- simulation through both drivers; they must still agree bit-for-bit.
+                  testCase "drivers agree under a gated (intermittent) tick" $
+                        let ticks = cycle [True, False, False, False] -- advance 1-in-4
+                        in mooreTriangle 600 ticks @?= mealyTriangle 600 ticks
                 ]
 
 -- ---------------------------------------------------------------------------
