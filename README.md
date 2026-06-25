@@ -19,6 +19,7 @@ straight to other Clash projects.
 |---|---|
 | [`blinky/`](blinky/) | Counter-divider drives an on-board LED. The "hello world" smoke test for the whole Clash → Quartus → board toolchain. Two tops: `Blinky` (free-runs) and `BlinkyWithReset` (held in reset by KEY0). |
 | [`pwm/`](pwm/) | Counter+comparator emits a duty-cycled output; a ramped duty makes `LEDR[0]` "breathe". The follow-on to `blinky`: where blinky toggled an LED, PWM dims one. |
+| [`pwm-pattern/`](pwm-pattern/) | Pattern generators feed the PWM duty — a steady level or a breathing ramp, picked live by `SW[0]`. Built **two ways** (`PwmMoore` via `moore`, `PwmMealy` via `mealyS`) to compare the constructions, with a test proving they produce the same waveform. |
 
 ## Toolchain
 
