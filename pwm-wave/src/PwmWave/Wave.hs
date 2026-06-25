@@ -135,3 +135,33 @@ triangleKernel d
         full = resize (maxBound :: Unsigned DutyW) :: Unsigned 32
         rise = resize (kernelWidth - d) :: Unsigned 32
         width = resize kernelWidth :: Unsigned 32
+
+{- | The spatial decode: render the bump centred at @pos@ across @n@ LEDs. 'imap'
+walks the lanes; lane @i@ sits at fixed-point location @i * ledUnit@, so its
+brightness is 'triangleKernel' of its distance to the peak. This is where the two
+triangles meet — the position (from 'runWave') picks /where/, the kernel decides
+/how bright/. Polymorphic in @n@ so the same decode serves both banks.
+-}
+bumpVec :: forall n. (KnownNat n) => Position -> Vec n (Unsigned DutyW)
+bumpVec pos = imap (\i _ -> triangleKernel (ledDist i pos)) (repeat ())
+
+{- | Distance from LED @i@'s centre (@i * ledUnit@) to a position. Branches on
+order rather than @abs (here - pos)@ because 'Position' is 'Unsigned': @abs@ is a
+no-op there and the subtraction would wrap below zero, so the magnitude is taken
+explicitly.
+-}
+ledDist :: (Integral a) => a -> Position -> Position
+ledDist i pos = if here >= pos then here - pos else pos - here
+    where
+        here = fromIntegral i * ledUnit
+
+-- | Red bank: the bump straight off the decode, peak walking with @pos@ (LED 0..9).
+redDuties :: Position -> Vec 10 (Unsigned DutyW)
+redDuties = bumpVec
+
+{- | Green bank: red's bump /reversed/. That single 'reverse' is the
+counter-rotation — green lane @i@ shows red-style lane @7 - i@, so as red sweeps
+@0 → 9@ green sweeps @7 → 0@, the banks moving in opposite directions.
+-}
+greenDuties :: Position -> Vec 8 (Unsigned DutyW)
+greenDuties = reverse . bumpVec

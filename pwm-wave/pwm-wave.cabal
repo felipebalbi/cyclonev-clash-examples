@@ -95,6 +95,7 @@ library
     PwmWave.Domain
     PwmWave.Core
     PwmWave.Wave
+    PwmWave
   default-language: Haskell2010
 
 -- Builds the executable 'clash', with the pwm-wave project in scope.
