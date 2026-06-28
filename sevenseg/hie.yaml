@@ -1,0 +1,10 @@
+cradle:
+  stack:
+  - path: "src"
+    component: "sevenseg:lib"
+  - path: "bin/Clash.hs"
+    component: "sevenseg:exe:clash"
+  - path: "bin/Clashi.hs"
+    component: "sevenseg:exe:clashi"
+  - path: "tests"
+    component: "sevenseg:test:test-library"

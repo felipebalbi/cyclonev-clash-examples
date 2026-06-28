@@ -21,6 +21,7 @@ straight to other Clash projects.
 | [`pwm/`](pwm/) | Counter+comparator emits a duty-cycled output at a fixed 75 % duty, dimming `LEDR[0]` to a steady level. The follow-on to `blinky`: where blinky toggled an LED, PWM dims one. |
 | [`pwm-pattern/`](pwm-pattern/) | Pattern generators feed the PWM duty — a steady level or a breathing ramp, picked live by `SW[0]`. Built **two ways** (`PwmMoore` via `moore`, `PwmMealy` via `mealyS`) to compare the constructions, with a test proving they produce the same waveform. |
 | [`pwm-wave/`](pwm-wave/) | A PWM "Larson/KITT" brightness wave: a symmetric bump ping-pongs across `LEDR[9:0]` while a counter-rotating bump sweeps `LEDG[7:0]`, each LED dimmed by per-lane PWM so the bump glides. Teaching axis: **vectors** — `Vec n Bit` ports and a vectorized PWM core (one carrier, N comparators). `SW[0]` swaps the linear falloff for a **gamma** curve held in the repo's first on-chip ROM. |
+| [`sevenseg/`](sevenseg/) | A hex odometer: a free-running counter divided to a visible rate, its 16-bit value shown as `0000`–`FFFF` across the four on-board seven-segment displays `HEX3`–`HEX0`. Teaching axis: a pure **combinational** active-low hex→segment **decoder** plus splitting a word into four **independently driven** digits (no time-division multiplexing — the C5G digits don't share segments). |
 
 ## Toolchain
 
