@@ -1,0 +1,10 @@
+cradle:
+  stack:
+  - path: "src"
+    component: "pushbutton:lib"
+  - path: "bin/Clash.hs"
+    component: "pushbutton:exe:clash"
+  - path: "bin/Clashi.hs"
+    component: "pushbutton:exe:clashi"
+  - path: "tests"
+    component: "pushbutton:test:test-library"
